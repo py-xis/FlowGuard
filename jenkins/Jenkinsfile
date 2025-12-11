@@ -113,6 +113,11 @@ pipeline {
         }
         
         stage('Deploy with Ansible') {
+            when {
+                expression { 
+                    return sh(script: 'which ansible-playbook', returnStatus: true) == 0 
+                }
+            }
             steps {
                 echo 'Deploying application with Ansible...'
                 sh '''
@@ -122,6 +127,35 @@ pipeline {
                         -e "git_commit=${GIT_COMMIT_SHORT}" \
                         -e "build_number=${BUILD_NUMBER}" \
                         -e "model_version=${MODEL_VERSION}"
+                '''
+            }
+        }
+        
+        stage('Deploy with kubectl') {
+            when {
+                expression { 
+                    return sh(script: 'which ansible-playbook', returnStatus: true) != 0 
+                }
+            }
+            steps {
+                echo 'Deploying application with kubectl (Ansible not available)...'
+                sh '''
+                    # Apply deployment
+                    kubectl apply -f kubernetes/deployment.yaml
+                    kubectl apply -f kubernetes/service.yaml
+                    kubectl apply -f kubernetes/hpa.yaml
+                    
+                    # Update image
+                    kubectl set image deployment/spam-classifier \
+                        spam-classifier=${IMAGE_NAME}:${IMAGE_TAG} \
+                        -n spam-classifier
+                    
+                    # Update environment variables
+                    kubectl set env deployment/spam-classifier \
+                        -n spam-classifier \
+                        GIT_COMMIT=${GIT_COMMIT_SHORT} \
+                        BUILD_NUMBER=${BUILD_NUMBER} \
+                        MODEL_VERSION=${MODEL_VERSION}
                 '''
             }
         }
