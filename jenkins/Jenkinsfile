@@ -113,11 +113,6 @@ pipeline {
         }
         
         stage('Deploy with Ansible') {
-            when {
-                expression { 
-                    return sh(script: 'which ansible-playbook', returnStatus: true) == 0 
-                }
-            }
             steps {
                 echo 'Deploying application with Ansible...'
                 sh '''
