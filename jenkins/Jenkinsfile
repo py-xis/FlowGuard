@@ -1,14 +1,6 @@
 pipeline {
     agent any
     
-    parameters {
-        booleanParam(
-            name: 'TRIGGER_TRAINING',
-            defaultValue: true,
-            description: 'Trigger model training after deployment'
-        )
-    }
-    
     environment {
         // Docker Hub credentials (stored in Jenkins or Vault)
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-id')
@@ -205,11 +197,6 @@ pipeline {
         }
         
         stage('Trigger Model Training') {
-            when {
-                expression { 
-                    return params.TRIGGER_TRAINING ?: false
-                }
-            }
             steps {
                 echo 'Triggering model training pipeline...'
                 build job: 'spam-classifier-train', 
