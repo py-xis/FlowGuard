@@ -1,0 +1,26 @@
+---
+# Global variables for all playbooks
+
+# Docker configuration
+docker_image: "spam-classifier:latest"
+docker_registry: "docker.io"
+
+# Kubernetes configuration
+kubernetes_namespace: "spam-classifier"
+
+# Application configuration
+app_name: "spam-classifier"
+app_port: 8501
+model_version: "v1.0.0"
+
+# MLflow configuration
+mlflow_port: 5000
+
+# ELK configuration
+elasticsearch_port: 9200
+kibana_port: 5601
+logstash_port: 5044
+
+# Vault configuration
+vault_addr: "http://vault:8200"
+vault_enabled: true

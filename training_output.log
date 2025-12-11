@@ -1,0 +1,33 @@
+{"timestamp": "2025-12-11T17:21:13.765208Z", "level": "INFO", "logger": "spam_classifier.train", "message": "Starting training with algorithm=naive_bayes", "module": "train", "function": "train_model", "line": 49}
+{"timestamp": "2025-12-11T17:21:14.005526Z", "level": "INFO", "logger": "spam_classifier.train", "message": "Loading dataset", "module": "train", "function": "train_model", "line": 58}
+{"timestamp": "2025-12-11T17:21:14.075803Z", "level": "INFO", "logger": "spam_classifier.train", "message": "Preprocessing text", "module": "train", "function": "train_model", "line": 69}
+{"timestamp": "2025-12-11T17:21:15.703075Z", "level": "INFO", "logger": "spam_classifier.train", "message": "Creating TF-IDF vectorizer", "module": "train", "function": "train_model", "line": 88}
+{"timestamp": "2025-12-11T17:21:15.789996Z", "level": "INFO", "logger": "spam_classifier.train", "message": "Training naive_bayes model", "module": "train", "function": "train_model", "line": 94}
+{"timestamp": "2025-12-11T17:21:15.796126Z", "level": "INFO", "logger": "spam_classifier.train", "message": "Model metrics - Accuracy: 0.9758, Precision: 0.9919, Recall: 0.8255, F1: 0.9011", "module": "train", "function": "train_model", "line": 118}
+2025/12/11 22:51:16 INFO mlflow.tracking._tracking_service.client: 🏃 View run wise-kite-379 at: http://localhost:5000/#/experiments/1/runs/80f8c81c44f04f9eb9bd5e390de06871.
+2025/12/11 22:51:16 INFO mlflow.tracking._tracking_service.client: 🧪 View experiment at: http://localhost:5000/#/experiments/1.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/src/train.py", line 174, in <module>
+    train_model(algorithm=args.algorithm, max_features=args.max_features)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/src/train.py", line 127, in train_model
+    mlflow.log_artifact(cm_plot)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/mlflow/tracking/fluent.py", line 1124, in log_artifact
+    MlflowClient().log_artifact(run_id, local_path, artifact_path)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/mlflow/tracking/client.py", line 1923, in log_artifact
+    self._tracking_client.log_artifact(run_id, local_path, artifact_path)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/mlflow/tracking/_tracking_service/client.py", line 822, in log_artifact
+    artifact_repo.log_artifact(local_path, artifact_path)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/mlflow/store/artifact/local_artifact_repo.py", line 43, in log_artifact
+    mkdir(artifact_dir)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/mlflow/utils/file_utils.py", line 211, in mkdir
+    raise e
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/mlflow/utils/file_utils.py", line 208, in mkdir
+    os.makedirs(target, exist_ok=True)
+  File "<frozen os>", line 215, in makedirs
+  File "<frozen os>", line 215, in makedirs
+  File "<frozen os>", line 215, in makedirs
+  [Previous line repeated 1 more time]
+  File "<frozen os>", line 225, in makedirs
+OSError: [Errno 30] Read-only file system: '/mlflow'

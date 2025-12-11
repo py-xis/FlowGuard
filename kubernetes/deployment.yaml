@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spam-classifier
+  namespace: spam-classifier
+  labels:
+    app: spam-classifier
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spam-classifier
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Allow 1 extra pod during update
+      maxUnavailable: 0    # Never have unavailable pods (zero-downtime)
+  template:
+    metadata:
+      labels:
+        app: spam-classifier
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8501"
+        prometheus.io/path: "/metrics"
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "spam-classifier"
+    spec:
+      serviceAccountName: spam-classifier-sa
+      containers:
+      - name: spam-classifier
+        image: abhikkumar04/spam-classifier:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8501
+          name: http
+          protocol: TCP
+        env:
+        - name: GIT_COMMIT
+          value: "WILL_BE_SET_BY_JENKINS"
+        - name: BUILD_NUMBER
+          value: "WILL_BE_SET_BY_JENKINS"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - configMapRef:
+            name: spam-classifier-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spam-classifier-sa
+  namespace: spam-classifier

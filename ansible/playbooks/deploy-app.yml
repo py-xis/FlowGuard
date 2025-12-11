@@ -1,0 +1,55 @@
+---
+# Playbook to deploy spam classifier application
+
+- name: Deploy Spam Classifier Application
+  hosts: localhost
+  gather_facts: yes
+  become: no
+
+  vars_files:
+    - ../inventory/group_vars/all.yml
+
+  vars:
+    git_commit: "{{ lookup('env', 'GIT_COMMIT') | default('unknown', true) }}"
+    build_number: "{{ lookup('env', 'BUILD_NUMBER') | default('1', true) }}"
+
+  tasks:
+    - name: Display deployment information
+      debug:
+        msg: |
+          Deploying {{ app_name }}
+          Image: {{ docker_image }}
+          Git Commit: {{ git_commit }}
+          Build Number: {{ build_number }}
+
+    - name: Deploy application using role
+      include_role:
+        name: app-deployment
+      tags: ['deploy']
+
+    - name: Wait for deployment to be ready
+      command: kubectl rollout status deployment/{{ app_name }} -n {{ kubernetes_namespace }} --timeout=5m
+      register: rollout_status
+      changed_when: false
+
+    - name: Display deployment status
+      debug:
+        msg: "{{ rollout_status.stdout_lines }}"
+
+    - name: Get pod information
+      command: kubectl get pods -n {{ kubernetes_namespace }} -l app={{ app_name }}
+      register: pod_info
+      changed_when: false
+
+    - name: Display pod information
+      debug:
+        msg: "{{ pod_info.stdout_lines }}"
+
+    - name: Get service information
+      command: kubectl get svc -n {{ kubernetes_namespace }}
+      register: svc_info
+      changed_when: false
+
+    - name: Display service information
+      debug:
+        msg: "{{ svc_info.stdout_lines }}"

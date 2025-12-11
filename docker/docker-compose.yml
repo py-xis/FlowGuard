@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Spam Classifier Application
+  spam-classifier:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: spam-classifier-app
+    ports:
+      - "8501:8501"
+    environment:
+      - MODEL_VERSION=v1.0.0
+      - MODEL_PATH=models/model.pkl
+      - VECTORIZER_PATH=models/vectorizer.pkl
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ../models:/app/models
+      - ../data:/app/data
+    depends_on:
+      - mlflow
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # MLflow Tracking Server
+  mlflow:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.mlflow
+    container_name: mlflow-server
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-data:/mlflow
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mlflow-data:
+  prometheus-data:

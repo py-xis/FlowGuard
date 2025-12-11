@@ -1,0 +1,46 @@
+---
+# ELK Stack deployment role
+
+- name: Deploy Elasticsearch
+  command: kubectl apply -f ../../kubernetes/elk/elasticsearch.yaml
+  register: elasticsearch_result
+  changed_when: "'created' in elasticsearch_result.stdout or 'configured' in elasticsearch_result.stdout"
+
+- name: Wait for Elasticsearch to be ready
+  command: kubectl wait --for=condition=ready pod -l app=elasticsearch -n {{ kubernetes_namespace }} --timeout=600s
+  register: elasticsearch_wait
+  changed_when: false
+  failed_when: false
+
+- name: Deploy Logstash
+  command: kubectl apply -f ../../kubernetes/elk/logstash.yaml
+  register: logstash_result
+  changed_when: "'created' in logstash_result.stdout or 'configured' in logstash_result.stdout"
+
+- name: Deploy Kibana
+  command: kubectl apply -f ../../kubernetes/elk/kibana.yaml
+  register: kibana_result
+  changed_when: "'created' in kibana_result.stdout or 'configured' in kibana_result.stdout"
+
+- name: Deploy Filebeat
+  command: kubectl apply -f ../../kubernetes/elk/filebeat-daemonset.yaml
+  register: filebeat_result
+  changed_when: "'created' in filebeat_result.stdout or 'configured' in filebeat_result.stdout"
+
+- name: Wait for Kibana to be ready
+  command: kubectl wait --for=condition=ready pod -l app=kibana -n {{ kubernetes_namespace }} --timeout=300s
+  register: kibana_wait
+  changed_when: false
+  failed_when: false
+
+- name: Get Kibana service status
+  command: kubectl get svc kibana -n {{ kubernetes_namespace }}
+  register: kibana_svc
+  changed_when: false
+
+- name: Display ELK Stack information
+  debug:
+    msg: |
+      ELK Stack deployed successfully
+      Access Kibana dashboard via the LoadBalancer IP
+      {{ kibana_svc.stdout_lines }}

@@ -1,0 +1,104 @@
+pipeline {
+    agent any
+    
+    parameters {
+        choice(
+            name: 'ALGORITHM',
+            choices: ['naive_bayes', 'random_forest', 'svm'],
+            description: 'ML algorithm to use for training'
+        )
+        string(
+            name: 'MAX_FEATURES',
+            defaultValue: '3000',
+            description: 'Maximum features for TF-IDF vectorizer'
+        )
+    }
+    
+    environment {
+        MLFLOW_TRACKING_URI = sh(
+            script: "kubectl get svc mlflow-service -n spam-classifier -o jsonpath='{.spec.clusterIP}':5000",
+            returnStdout: true
+        ).trim()
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code...'
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installing Python dependencies...'
+                sh '''
+                    python3 -m venv venv || true
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Train Model') {
+            steps {
+                echo "Training model with algorithm: ${params.ALGORITHM}"
+                sh """
+                    . venv/bin/activate
+                    export MLFLOW_TRACKING_URI=http://${MLFLOW_TRACKING_URI}
+                    python src/train.py \
+                        --algorithm ${params.ALGORITHM} \
+                        --max-features ${params.MAX_FEATURES}
+                """
+            }
+        }
+        
+        stage('Evaluate Model') {
+            steps {
+                echo 'Reading training statistics...'
+                sh '''
+                    if [ -f training_stats.json ]; then
+                        cat training_stats.json
+                    fi
+                '''
+            }
+        }
+        
+        stage('Promote Model') {
+            steps {
+                echo 'Model artifacts saved to models/ directory'
+                echo 'Check MLflow UI for experiment tracking and model registry'
+                sh '''
+                    echo "MLflow UI: http://${MLFLOW_TRACKING_URI}"
+                    ls -lh models/
+                '''
+            }
+        }
+        
+        stage('Trigger Deployment') {
+            when {
+                expression {
+                    return params.AUTO_DEPLOY == true
+                }
+            }
+            steps {
+                echo 'Triggering main deployment pipeline...'
+                build job: 'spam-classifier-deploy', wait: false
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '✅ Model training completed successfully!'
+            archiveArtifacts artifacts: 'models/*.pkl,training_stats.json,confusion_matrix.png', fingerprint: true
+        }
+        failure {
+            echo '❌ Model training failed!'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

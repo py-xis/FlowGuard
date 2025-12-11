@@ -1,0 +1,24 @@
+# Dockerfile for MLflow tracking server
+FROM python:3.11-slim
+
+WORKDIR /mlflow
+
+# Install MLflow and dependencies
+RUN pip install --no-cache-dir \
+    mlflow==2.16.2 \
+    psycopg2-binary==2.9.9 \
+    boto3==1.34.59
+
+# Create directory for artifacts and database with proper permissions
+RUN mkdir -p /mlflow/artifacts /mlflow/db && \
+    chmod -R 777 /mlflow
+
+# Expose MLflow port
+EXPOSE 5000
+
+# Run MLflow server
+CMD mlflow server \
+    --backend-store-uri sqlite:////mlflow/db/mlflow.db \
+    --default-artifact-root /mlflow/artifacts \
+    --host 0.0.0.0 \
+    --port 5000

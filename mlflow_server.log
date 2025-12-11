@@ -1,0 +1,37 @@
+[2025-12-11 23:02:16 +0530] [65814] [INFO] Starting gunicorn 23.0.0
+[2025-12-11 23:02:16 +0530] [65814] [INFO] Listening at: http://127.0.0.1:5000 (65814)
+[2025-12-11 23:02:16 +0530] [65814] [INFO] Using worker: sync
+[2025-12-11 23:02:16 +0530] [65815] [INFO] Booting worker with pid: 65815
+[2025-12-11 23:02:16 +0530] [65816] [INFO] Booting worker with pid: 65816
+[2025-12-11 23:02:16 +0530] [65817] [INFO] Booting worker with pid: 65817
+[2025-12-11 23:02:16 +0530] [65818] [INFO] Booting worker with pid: 65818
+[2025-12-11 23:06:47 +0530] [65814] [CRITICAL] WORKER TIMEOUT (pid:65818)
+[2025-12-11 23:06:47 +0530] [65818] [ERROR] Error handling request (no URI read)
+Traceback (most recent call last):
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 133, in handle
+    req = next(parser)
+          ^^^^^^^^^^^^
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/parser.py", line 41, in __next__
+    self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/message.py", line 259, in __init__
+    super().__init__(cfg, unreader, peer_addr)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/message.py", line 60, in __init__
+    unused = self.parse(self.unreader)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/message.py", line 271, in parse
+    self.get_data(unreader, buf, stop=True)
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/message.py", line 262, in get_data
+    data = unreader.read()
+           ^^^^^^^^^^^^^^^
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 36, in read
+    d = self.chunk()
+        ^^^^^^^^^^^^
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 63, in chunk
+    return self.sock.recv(self.mxchunk)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/abhik04/Documents/VSCODE/SPE/Final_Project/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+    sys.exit(1)
+SystemExit: 1
+[2025-12-11 23:06:47 +0530] [65818] [INFO] Worker exiting (pid: 65818)
+[2025-12-11 23:06:48 +0530] [67525] [INFO] Booting worker with pid: 67525

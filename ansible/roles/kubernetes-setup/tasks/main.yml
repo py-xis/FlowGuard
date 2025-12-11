@@ -1,0 +1,33 @@
+---
+# Task file for Kubernetes setup role
+
+- name: Create Kubernetes namespace
+  command: kubectl apply -f ../../kubernetes/namespace.yaml
+  register: namespace_result
+  changed_when: "'created' in namespace_result.stdout or 'configured' in namespace_result.stdout"
+
+- name: Apply ConfigMap
+  command: kubectl apply -f ../../kubernetes/configmap.yaml
+  register: configmap_result
+  changed_when: "'created' in configmap_result.stdout or 'configured' in configmap_result.stdout"
+
+- name: Apply Secrets (if not using Vault)
+  command: kubectl apply -f ../../kubernetes/secrets.yaml
+  when: not vault_enabled | default(false)
+  register: secrets_result
+  changed_when: "'created' in secrets_result.stdout or 'configured' in secrets_result.stdout"
+
+- name: Deploy MLflow server
+  command: kubectl apply -f ../../kubernetes/mlflow-deployment.yaml
+  register: mlflow_result
+  changed_when: "'created' in mlflow_result.stdout or 'configured' in mlflow_result.stdout"
+
+- name: Wait for MLflow to be ready
+  command: kubectl wait --for=condition=ready pod -l app=mlflow -n {{ kubernetes_namespace }} --timeout=300s
+  register: mlflow_wait
+  changed_when: false
+  failed_when: false
+
+- name: Display Kubernetes setup status
+  debug:
+    msg: "Kubernetes infrastructure setup completed"

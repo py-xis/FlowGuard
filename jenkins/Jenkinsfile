@@ -1,0 +1,186 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Docker Hub credentials (stored in Jenkins or Vault)
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-id')
+        DOCKERHUB_USERNAME = 'abhikkumar04'
+        
+        // Docker image details
+        IMAGE_NAME = "${DOCKERHUB_USERNAME}/spam-classifier"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        
+        // Git commit SHA
+        GIT_COMMIT_SHORT = sh(
+            script: "git rev-parse --short HEAD",
+            returnStdout: true
+        ).trim()
+        
+        // Model version
+        MODEL_VERSION = "v1.${BUILD_NUMBER}.0"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from Git repository...'
+                checkout scm
+                sh 'git log -1'
+            }
+        }
+        
+        stage('Setup Environment') {
+            steps {
+                echo 'Setting up Python environment...'
+                sh '''
+                    python3 -m venv venv || true
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                echo 'Running unit and integration tests...'
+                sh '''
+                    . venv/bin/activate
+                    pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --junit-xml=test-results.xml
+                '''
+            }
+            post {
+                always {
+                    junit 'test-results.xml'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'htmlcov',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report'
+                    ])
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh '''
+                    docker build \
+                        -f docker/Dockerfile \
+                        -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                        -t ${IMAGE_NAME}:latest \
+                        --build-arg GIT_COMMIT=${GIT_COMMIT_SHORT} \
+                        --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
+                        --build-arg MODEL_VERSION=${MODEL_VERSION} \
+                        .
+                '''
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing Docker image to Docker Hub...'
+                sh '''
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push ${IMAGE_NAME}:latest
+                    docker logout
+                '''
+            }
+        }
+        
+        stage('Update Kubernetes Deployment') {
+            steps {
+                echo 'Updating Kubernetes deployment...'
+                sh '''
+                    # Update deployment YAML with new image tag
+                    sed -i.bak "s|image:.*spam-classifier.*|image: ${IMAGE_NAME}:${IMAGE_TAG}|g" kubernetes/deployment.yaml
+                    
+                    # Update environment variables
+                    kubectl set env deployment/spam-classifier \
+                        -n spam-classifier \
+                        GIT_COMMIT=${GIT_COMMIT_SHORT} \
+                        BUILD_NUMBER=${BUILD_NUMBER} \
+                        MODEL_VERSION=${MODEL_VERSION} || true
+                '''
+            }
+        }
+        
+        stage('Deploy with Ansible') {
+            steps {
+                echo 'Deploying application with Ansible...'
+                sh '''
+                    cd ansible
+                    ansible-playbook -i inventory/hosts.ini playbooks/deploy-app.yml \
+                        -e "docker_image=${IMAGE_NAME}:${IMAGE_TAG}" \
+                        -e "git_commit=${GIT_COMMIT_SHORT}" \
+                        -e "build_number=${BUILD_NUMBER}" \
+                        -e "model_version=${MODEL_VERSION}"
+                '''
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                echo 'Verifying Kubernetes deployment...'
+                sh '''
+                    kubectl rollout status deployment/spam-classifier -n spam-classifier --timeout=5m
+                    kubectl get pods -n spam-classifier -l app=spam-classifier
+                    kubectl get svc -n spam-classifier
+                '''
+            }
+        }
+        
+        stage('Health Check') {
+            steps {
+                echo 'Performing health check...'
+                sh '''
+                    # Wait for pods to be ready
+                    sleep 30
+                    
+                    # Get service endpoint
+                    SERVICE_IP=$(kubectl get svc spam-classifier-service -n spam-classifier -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    
+                    if [ -z "$SERVICE_IP" ]; then
+                        echo "LoadBalancer IP not available yet, using port-forward for health check"
+                        kubectl port-forward -n spam-classifier svc/spam-classifier-service 8501:80 &
+                        PF_PID=$!
+                        sleep 5
+                        curl -f http://localhost:8501/_stcore/health || exit 1
+                        kill $PF_PID
+                    else
+                        echo "Health check at http://$SERVICE_IP"
+                        curl -f http://$SERVICE_IP/_stcore/health || exit 1
+                    fi
+                '''
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+            echo "Deployed ${IMAGE_NAME}:${IMAGE_TAG}"
+            
+            // Tag Git commit with deployment info
+            sh """
+                git tag -a "deploy-${BUILD_NUMBER}" -m "Deployed build ${BUILD_NUMBER} to production"
+                git push origin "deploy-${BUILD_NUMBER}" || true
+            """
+        }
+        failure {
+            echo '❌ Pipeline failed!'
+        }
+        always {
+            // Clean up
+            sh '''
+                docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true
+                docker rmi ${IMAGE_NAME}:latest || true
+            '''
+            cleanWs()
+        }
+    }
+}

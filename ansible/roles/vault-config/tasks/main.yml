@@ -1,0 +1,46 @@
+---
+# Vault configuration role
+
+- name: Check if Vault is enabled
+  debug:
+    msg: "Vault integration is {{ 'enabled' if vault_enabled else 'disabled' }}"
+
+- name: Display Vault setup information
+  debug:
+    msg: |
+      For production deployment, Vault should be configured to:
+      1. Store Docker Hub credentials
+      2. Store database passwords
+      3. Inject secrets into Kubernetes pods
+      
+      This is a simplified setup for educational purposes.
+      In production, install Vault using Helm and configure properly.
+  when: vault_enabled
+
+- name: Create Vault namespace (if needed)
+  command: kubectl create namespace vault
+  register: vault_namespace
+  failed_when: false
+  changed_when: vault_namespace.rc == 0
+  when: vault_enabled
+
+- name: Display Vault installation instructions
+  debug:
+    msg: |
+      To install Vault in Kubernetes:
+      
+      1. Add HashiCorp Helm repo:
+         helm repo add hashicorp https://helm.releases.hashicorp.com
+      
+      2. Install Vault:
+         helm install vault hashicorp/vault --namespace vault
+      
+      3. Initialize and unseal Vault:
+         kubectl exec -n vault vault-0 -- vault operator init
+         kubectl exec -n vault vault-0 -- vault operator unseal
+      
+      4. Configure Kubernetes auth:
+         kubectl exec -n vault vault-0 -- vault auth enable kubernetes
+      
+      5. Create policy and role for spam-classifier
+  when: vault_enabled

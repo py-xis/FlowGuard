@@ -1,0 +1,72 @@
+---
+# Application deployment role
+
+- name: Update deployment image if specified
+  block:
+    - name: Update deployment YAML with new image
+      replace:
+        path: ../../kubernetes/deployment.yaml
+        regexp: 'image:.*spam-classifier.*'
+        replace: 'image: {{ docker_image }}'
+      when: docker_image is defined
+
+    - name: Update deployment YAML with Git commit
+      replace:
+        path: ../../kubernetes/deployment.yaml
+        regexp: 'value: "WILL_BE_SET_BY_JENKINS" # GIT_COMMIT'
+        replace: 'value: "{{ git_commit | default("unknown") }}"'
+      when: git_commit is defined
+
+    - name: Update deployment YAML with build number
+      replace:
+        path: ../../kubernetes/deployment.yaml
+        regexp: 'value: "WILL_BE_SET_BY_JENKINS" # BUILD_NUMBER'
+        replace: 'value: "{{ build_number | default("1") }}"'
+      when: build_number is defined
+
+- name: Apply application deployment
+  command: kubectl apply -f ../../kubernetes/deployment.yaml
+  register: deployment_result
+  changed_when: "'created' in deployment_result.stdout or 'configured' in deployment_result.stdout"
+
+- name: Apply service
+  command: kubectl apply -f ../../kubernetes/service.yaml
+  register: service_result
+  changed_when: "'created' in service_result.stdout or 'configured' in service_result.stdout"
+
+- name: Apply Horizontal Pod Autoscaler
+  command: kubectl apply -f ../../kubernetes/hpa.yaml
+  register: hpa_result
+  changed_when: "'created' in hpa_result.stdout or 'configured' in hpa_result.stdout"
+
+- name: Wait for deployment rollout
+  command: kubectl rollout status deployment/{{ app_name }} -n {{ kubernetes_namespace }} --timeout=5m
+  register: rollout_status
+  changed_when: false
+
+- name: Get application pods
+  command: kubectl get pods -n {{ kubernetes_namespace }} -l app={{ app_name }} -o wide
+  register: app_pods
+  changed_when: false
+
+- name: Get HPA status
+  command: kubectl get hpa -n {{ kubernetes_namespace }}
+  register: hpa_status
+  changed_when: false
+
+- name: Display deployment information
+  debug:
+    msg: |
+      ===========================================
+      Application Deployment Successful
+      ===========================================
+      
+      Pods:
+      {{ app_pods.stdout_lines | join('\n      ') }}
+      
+      HPA Status:
+      {{ hpa_status.stdout_lines | join('\n      ') }}
+      
+      Rollout Status:
+      {{ rollout_status.stdout }}
+      ===========================================

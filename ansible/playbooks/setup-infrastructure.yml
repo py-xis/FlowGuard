@@ -1,0 +1,28 @@
+---
+# Playbook to setup complete infrastructure (Kubernetes, ELK, Vault, MLflow)
+
+- name: Setup Complete Infrastructure
+  hosts: localhost
+  gather_facts: yes
+  become: no
+
+  vars_files:
+    - ../inventory/group_vars/all.yml
+
+  tasks:
+    - name: Display setup information
+      debug:
+        msg: "Setting up infrastructure for {{ app_name }}"
+
+  roles:
+    - role: kubernetes-setup
+      tags: ['kubernetes', 'setup']
+    
+    - role: vault-config
+      tags: ['vault', 'security']
+    
+    - role: elk-stack
+      tags: ['elk', 'monitoring']
+    
+    - role: app-deployment
+      tags: ['app', 'deployment']
