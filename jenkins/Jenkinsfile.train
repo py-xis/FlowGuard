@@ -14,11 +14,6 @@ pipeline {
         )
     }
     
-    environment {
-        // MLflow URI will be set dynamically in the training stage
-        MLFLOW_TRACKING_URI = ''
-    }
-    
     stages {
         stage('Checkout') {
             steps {
@@ -86,8 +81,12 @@ pipeline {
                 echo 'Model artifacts saved to models/ directory'
                 echo 'Check MLflow UI for experiment tracking and model registry'
                 script {
+                    if (env.MLFLOW_TRACKING_URI) {
+                        echo "MLflow UI: ${env.MLFLOW_TRACKING_URI}"
+                    } else {
+                        echo "MLflow UI: Not configured"
+                    }
                     sh """
-                        echo "MLflow UI: http://${env.MLFLOW_TRACKING_URI}"
                         ls -lh models/
                     """
                 }
