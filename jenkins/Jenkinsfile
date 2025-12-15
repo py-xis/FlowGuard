@@ -6,8 +6,8 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-id')
         DOCKERHUB_USERNAME = 'abhikkumar04'
         
-        // Docker path for macOS
-        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+        // Docker path for macOS + user local bin for Python packages
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.HOME}/.local/bin:${env.PATH}"
         
         // Docker image details
         IMAGE_NAME = "${DOCKERHUB_USERNAME}/spam-classifier"
@@ -116,17 +116,29 @@ pipeline {
             steps {
                 echo 'Deploying application with Ansible...'
                 sh '''
+                    # Activate the virtual environment
+                    . venv/bin/activate
+                    
                     # Check if ansible-playbook is installed
                     if ! command -v ansible-playbook &> /dev/null; then
-                        echo "Ansible not found. Installing Ansible..."
-                        pip3 install --user ansible || brew install ansible || {
-                            echo "Failed to install Ansible. Skipping Ansible deployment."
-                            exit 0
-                        }
+                        echo "Ansible not found. Installing Ansible in virtual environment..."
+                        pip install ansible
+                        
+                        # Verify installation
+                        if ! command -v ansible-playbook &> /dev/null; then
+                            echo "Failed to install Ansible. Attempting system-wide installation..."
+                            pip3 install --user ansible
+                            
+                            # Add user bin to PATH for this shell session
+                            export PATH="$HOME/.local/bin:$PATH"
+                        fi
                     fi
                     
                     # Verify ansible-playbook is now available
                     if command -v ansible-playbook &> /dev/null; then
+                        echo "Ansible found at: $(which ansible-playbook)"
+                        echo "Ansible version: $(ansible-playbook --version)"
+                        
                         cd ansible
                         ansible-playbook -i inventory/hosts.ini playbooks/deploy-app.yml \
                             -e "docker_image=${IMAGE_NAME}:${IMAGE_TAG}" \
@@ -134,7 +146,8 @@ pipeline {
                             -e "build_number=${BUILD_NUMBER}" \
                             -e "model_version=${MODEL_VERSION}"
                     else
-                        echo "Ansible still not available after installation attempt. Skipping."
+                        echo "ERROR: Ansible installation failed. Cannot proceed with Ansible deployment."
+                        exit 1
                     fi
                 '''
             }

@@ -1,0 +1,9 @@
+{
+  "total_samples": 5572,
+  "spam_samples": 747,
+  "ham_samples": 4825,
+  "accuracy": 0.9757847533632287,
+  "precision": 0.9919354838709677,
+  "recall": 0.825503355704698,
+  "f1_score": 0.9010989010989011
+}
