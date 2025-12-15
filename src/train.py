@@ -19,7 +19,7 @@ logger = setup_logger("spam_classifier.train")
 
 
 def plot_confusion_matrix(cm, filename="confusion_matrix.png"):
-    """Plot and save confusion matrix"""
+    """Plot and save the confusion matrix"""
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                 xticklabels=['Not Spam', 'Spam'],
