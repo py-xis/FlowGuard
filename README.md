@@ -1,6 +1,5 @@
 # 📧 Email/SMS Spam Classifier - MLOps Production System
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
@@ -24,8 +23,6 @@ A **production-grade Email/SMS Spam Classifier** with complete **DevOps + MLOps 
 - ✅ **Secrets Management** with Vault
 - ✅ **Auto-Scaling** with Kubernetes HPA
 - ✅ **Zero-Downtime Deployments** with Rolling Updates
-
-**Objective:** Achieve **30/30 marks** by implementing all mandatory and advanced features.
 
 ---
 
@@ -148,34 +145,6 @@ Final_Project/
 
 ---
 
-## 🎓 Academic Requirements Met
-
-### ✅ Working Project (20/20)
-- Git push automatically triggers Jenkins pipeline
-- Automated testing, building, and deployment
-- Application updates visible immediately
-- ELK Stack shows real-time logs
-
-### ✅ Advanced Features (3/3)
-- **Vault:** Secrets management with HashiCorp Vault
-- **Ansible Roles:** Modular configuration (4 roles)
-- **HPA:** Auto-scaling from 2 to 10 replicas
-
-### ✅ Innovation (2/2)
-- **Automated Model Retraining:** Jenkins pipeline for ML training
-- **Intelligent Prediction Logging:** Confidence scores and model drift detection
-
-### ✅ Domain-Specific MLOps (5/5)
-- **MLflow:** Complete experiment tracking and model registry
-- **Model Versioning:** Each model tagged with Git commit
-- **Training Pipeline:** Separate automated training workflow
-- **Model Monitoring:** ML-specific metrics in Kibana
-- **Complete ML Lifecycle:** Development → Training → Deployment → Monitoring
-
-**Total: 30/30 Marks** ✅
-
----
-
 ## 🔄 CI/CD Pipeline Flow
 
 1. **Developer** commits code to GitHub
@@ -255,86 +224,4 @@ Expected coverage: >80%
 ✅ **RBAC** - Role-based access control for Kubernetes  
 ✅ **Health checks** - Liveness and readiness probes
 
----
-
-## 🐛 Troubleshooting
-
-See [`RUN_PROJECT_STEPS.md`](./RUN_PROJECT_STEPS.md#troubleshooting) for detailed troubleshooting guide.
-
-Common issues:
-- **Pods not starting:** Check logs with `kubectl logs <pod-name> -n spam-classifier`
-- **HPA not scaling:** Enable metrics-server in Minikube
-- **Kibana no logs:** Verify Filebeat is running
-- **Jenkins pipeline fails:** Check Docker Hub credentials
-
----
-
-## 👥 Team & Contributions
-
-**Team Size:** 2 Students
-
-**Student 1 - DevOps Lead:**
-- Jenkins CI/CD pipelines
-- Kubernetes manifests
-- ELK Stack deployment
-- Infrastructure documentation
-
-**Student 2 - MLOps & Application Lead:**
-- Application code with logging
-- MLflow integration
-- Ansible playbooks and roles
-- Vault configuration
-- Testing and verification
-
----
-
-## 📚 Documentation
-
-- **[RUN_PROJECT_STEPS.md](./RUN_PROJECT_STEPS.md)** - Complete execution manual
-- **[project_architecture_plan.md](../../../.gemini/antigravity/brain/16673bdf-1314-4cf3-b5b0-d763e6636201/project_architecture_plan.md)** - Detailed architecture design
-- **[FinalProjectGuidelines.md](./FinalProjectGuidelines.md)** - Course requirements
-
----
-
-## 🎉 Demo Preparation
-
-Before faculty demo:
-
-1. ✅ Run through `RUN_PROJECT_STEPS.md` completely
-2. ✅ Verify all services are accessible
-3. ✅ Prepare example predictions
-4. ✅ Practice explaining architecture
-5. ✅ Test HPA scaling
-6. ✅ Have Kibana dashboard ready
-7. ✅ Know your code thoroughly
-
-**Estimated Demo Time:** 15-20 minutes
-
----
-
-## 📝 License
-
-This project is for academic purposes as part of CSE 816 course.
-
----
-
-## 🙏 Acknowledgments
-
-- **Course:** CSE 816 - Software Production Engineering
-- **Original ML Model:** Based on Email/SMS Spam Classifier dataset
-- **Tools:** Open-source DevOps and MLOps tools
-
----
-
-## 📞 Support
-
-For issues or questions during development:
-1. Check `RUN_PROJECT_STEPS.md` troubleshooting section
-2. Review Kubernetes pod logs
-3. Check Jenkins console output
-4. Verify all prerequisites are installed
-
----
-
-**Built with ❤️ for Software Production Engineering**
 
